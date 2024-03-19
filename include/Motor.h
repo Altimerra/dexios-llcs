@@ -27,9 +27,10 @@ public:
 
     ArduPID PID;
     Encoder encoder;
-
+    
     Motor(uint8_t PWM, uint8_t IN1, uint8_t IN2, uint8_t ENC1, uint8_t ENC2);
     ~Motor();
+    void init();
 
     bool running = false;
     double encval; // current encoder reading

@@ -11,6 +11,12 @@ Solenoid::~Solenoid()
 {
 }
 
+void Solenoid::init()
+{
+    pinMode(IN1, OUTPUT);
+    pinMode(IN2, OUTPUT);
+}
+
 void Solenoid::on()
 {
     digitalWrite(IN1, HIGH);

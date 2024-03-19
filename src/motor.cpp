@@ -1,10 +1,10 @@
 #include "Motor.h"
 
+
+
 Motor::Motor(uint8_t PWM, uint8_t IN1, uint8_t IN2, uint8_t ENC1, uint8_t ENC2) : PWM(PWM), IN1(IN1), IN2(IN2), ENC1(ENC1), ENC2(ENC2), encoder(ENC1, ENC2)
 {
-    pinMode(PWM, OUTPUT);
-    pinMode(IN1, OUTPUT);
-    pinMode(IN2, OUTPUT);
+
 
     PID.begin(&encval, &outspeed, &setpoint, p, i, d);
 
@@ -22,6 +22,13 @@ Motor::Motor(uint8_t PWM, uint8_t IN1, uint8_t IN2, uint8_t ENC1, uint8_t ENC2) 
 Motor::~Motor()
 {
     // PID.stop();
+}
+
+void Motor::init()
+{
+    pinMode(PWM, OUTPUT);
+    pinMode(IN1, OUTPUT);
+    pinMode(IN2, OUTPUT);
 }
 
 void Motor::rcw()

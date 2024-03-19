@@ -9,6 +9,7 @@ private:
 public:
     Solenoid(uint16_t IN1, uint16_t IN2);
     ~Solenoid();
+    void init();
     void on();
     void off();
 };
