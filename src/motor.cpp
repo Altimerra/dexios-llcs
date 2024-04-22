@@ -1,17 +1,14 @@
 #include "Motor.h"
 
-
-
 Motor::Motor(uint8_t PWM, uint8_t IN1, uint8_t IN2, uint8_t ENC1, uint8_t ENC2) : PWM(PWM), IN1(IN1), IN2(IN2), ENC1(ENC1), ENC2(ENC2), encoder(ENC1, ENC2)
 {
-
 
     PID.begin(&encval, &outspeed, &setpoint, p, i, d);
 
     // PID.reverse()               // Uncomment if controller output is "reversed"
-    PID.setSampleTime(10);      // OPTIONAL - will ensure at least 10ms have past between successful compute() calls
+    PID.setSampleTime(10); // OPTIONAL - will ensure at least 10ms have past between successful compute() calls
     PID.setOutputLimits(-255, 255);
-    //PID.setBias(0);
+    // PID.setBias(0);
     PID.setWindUpLimits(-10, 10); // Groth bounds for the integral term to prevent integral wind-up
 
     PID.start();
@@ -51,7 +48,7 @@ void Motor::stp()
 
 void Motor::ss()
 {
-    analogWrite(PWM, abs(speedmul*outspeed));
+    analogWrite(PWM, abs(speedmul * outspeed));
 }
 
 void Motor::dir()
@@ -93,8 +90,8 @@ void Motor::set(int ticks)
 }
 
 void Motor::update()
-{   
-    //Serial.println(newPosition);
+{
+    // Serial.println(newPosition);
     PID.compute();
     dir();
     ss();
@@ -105,8 +102,7 @@ void Motor::update()
     }
     if (encval > setpoint)
     {
-        //setpoint = 0;
+        // setpoint = 0;
         running = false;
     }
-
 }

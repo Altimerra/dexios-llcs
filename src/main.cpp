@@ -7,32 +7,31 @@
 
 // 2, 3, 18, 19, 20, 21 interrupts
 
-Motor mtr(2, 3, 4, 20, 21);
-Solenoid sol(40, 41);
-Interface interface;
+unsigned long lastExecutedMillis = 0;
+const unsigned long delayInterval = 1000;
 
-unsigned long previousMillis = 0;
-unsigned long delayInterval = 1000;
+Motor mix(1, 2, 3, 4, 5);
+Motor mmd(1, 2, 3, 4, 5);
+Motor mrl(1, 2, 3, 4, 5);
+Motor mtf(1, 2, 3, 4, 5);
+Motor mto(1, 2, 3, 4, 5);
+Solenoid six(1, 2);
+Solenoid smd(1, 2);
+Hand hand(&mix, &mmd, &mrl, &mtf, &mto, &six, &smd);
+Interface interface(&hand);
 
 void setup()
 {
-    Serial.begin(9600);
-    mtr.init();
-    sol.init();
-    mtr.set(3000);
-    mtr.speedmul = 1.0;
+    hand.init();
+    interface.init();
 }
 
 void loop()
 {
-    mtr.update();
-    interface.update();
-    switch (interface.currentAct)
+    unsigned long currentMillis = millis();
+    if (currentMillis - lastExecutedMillis >= delayInterval)
     {
-    case Actions::Mi :
-        // code to execute if expression == value1
-        mtr.set(interface.data["Mi"]);
-        interface.currentAct = Actions::None;
-        break;
+        lastExecutedMillis = currentMillis; // save the last executed time
+        interface.update();
     }
 }
