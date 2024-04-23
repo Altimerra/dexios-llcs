@@ -28,10 +28,11 @@ void setup()
 
 void loop()
 {
+    interface.update();
     unsigned long currentMillis = millis();
     if (currentMillis - lastExecutedMillis >= delayInterval)
     {
         lastExecutedMillis = currentMillis; // save the last executed time
-        interface.update();
+        
     }
 }

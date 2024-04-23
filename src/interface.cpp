@@ -12,12 +12,25 @@ Interface::~Interface()
 void Interface::init()
 {
     Serial.begin(9600);
+    delay(1000);
+    serialout["action"] = "init";
+    serializeJson(serialout, Serial);
+    Serial.println();
+    serialout.clear();
 }
 
 void Interface::update()
 {
+    //serialout["action"] = "loopchk";
+    //serializeJson(serialout, Serial);
+    //Serial.println();
+
     if (Serial.available() > 0)
     {
+        serialout["action"] = "serialavailable";
+        serializeJson(serialout, Serial);
+        Serial.println();
+        serialout.clear();
         // Read the incoming JSON data
         // String jsonInput = Serial.readStringUntil('\n');
 
@@ -30,6 +43,8 @@ void Interface::update()
 
             serialout["action"] = error.c_str();
             serializeJson(serialout, Serial);
+            Serial.println();
+            serialout.clear();
             return;
         }
 
@@ -37,27 +52,31 @@ void Interface::update()
         //const char *action = serialin["action"];
 
         // Process the action
-        if (strcmp(serialin["action"], "setvalues") == 0)
+        if (strcmp(serialin["action"], "setval") == 0)
         {
-            if (strcmp(serialin["set"]["mix"], "true") == 0) {
+            serialout["action"] = "settingvals";
+            serializeJson(serialout, Serial);
+            Serial.println();
+
+            if (serialin["data"]["mix"] != nullptr) {
                 hand->mix->set(serialin["data"]["mix"]); 
             }
-            if (strcmp(serialin["set"]["mmd"], "true") == 0) {
+            if (serialin["data"]["mmd"] != nullptr) {
                 hand->mmd->set(serialin["data"]["mmd"]); 
             }
-            if (strcmp(serialin["set"]["mrl"], "true") == 0) {
+            if (serialin["data"]["mrl"] != nullptr) {
                 hand->mrl->set(serialin["data"]["mrl"]); 
             }
-            if (strcmp(serialin["set"]["mtf"], "true") == 0) {
+            if (serialin["data"]["mtf"] != nullptr) {
                 hand->mtf->set(serialin["data"]["mtf"]); 
             }
-            if (strcmp(serialin["set"]["mto"], "true") == 0) {
+            if (serialin["data"]["mto"] != nullptr) {
                 hand->mto->set(serialin["data"]["mto"]); 
             }
-            if (strcmp(serialin["set"]["six"], "true") == 0) {
+            if (serialin["data"]["six"] != nullptr) {
                 hand->six->set(serialin["data"]["six"]); 
             }
-            if (strcmp(serialin["set"]["smd"], "true") == 0) {
+            if (serialin["data"]["smd"] != nullptr) {
                 hand->smd->set(serialin["data"]["smd"]); 
             }
         }
@@ -72,6 +91,8 @@ void Interface::update()
         serialout["data"]["smd"] = hand->smd->state;
 
         serializeJson(serialout, Serial);
+        Serial.println();
+        serialout.clear();
 
     }
 }
