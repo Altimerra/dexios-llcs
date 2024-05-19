@@ -2,7 +2,6 @@
 
 Interface::Interface(Hand* hand) : hand(hand)
 {
-
 }
 
 Interface::~Interface()
@@ -12,12 +11,38 @@ Interface::~Interface()
 void Interface::init()
 {
     Serial.begin(9600);
-    delay(1000);
     serialout["action"] = "init";
     serializeJson(serialout, Serial);
     Serial.println();
     serialout.clear();
 }
+
+void Interface::periodic()
+{
+    serialout["setpoint"] = hand->mix->setpoint;
+    serialout["encval"] = hand->mix->encval;
+    serialout["outspeed"] = hand->mix->outspeed;
+    serializeJson(serialout, Serial);
+    Serial.println();
+    serialout.clear();
+}
+
+void Interface::print(char* key, char* value)
+{
+    serialout[key] = value;
+    serializeJson(serialout, Serial);
+    Serial.println();
+    serialout.clear();
+}
+void Interface::print(char* key, int value)
+{
+    serialout[key] = value;
+    serializeJson(serialout, Serial);
+    Serial.println();
+    serialout.clear();
+}
+//template void Interface::print<char*,char*>(char*,char*);
+//template void Interface::print<char*,int>(char*,int);
 
 void Interface::update()
 {
@@ -82,11 +107,11 @@ void Interface::update()
         }
 
         serialout["action"] = "response";
-        serialout["data"]["min"] = hand->mix->encval;
-        serialout["data"]["mmd"] = hand->mmd->encval;
-        serialout["data"]["mrl"] = hand->mrl->encval;
-        serialout["data"]["mtf"] = hand->mtf->encval;
-        serialout["data"]["mto"] = hand->mto->encval;
+        serialout["data"]["mix"] = hand->mix->setpoint;
+        serialout["data"]["mmd"] = hand->mmd->setpoint;
+        serialout["data"]["mrl"] = hand->mrl->setpoint;
+        serialout["data"]["mtf"] = hand->mtf->setpoint;
+        serialout["data"]["mto"] = hand->mto->setpoint;
         serialout["data"]["six"] = hand->six->state;
         serialout["data"]["smd"] = hand->smd->state;
 

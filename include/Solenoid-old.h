@@ -1,14 +1,15 @@
 #ifndef SOLENOID_H
 #define SOLENOID_H
 
-class Solenoid
+class SolenoidOld
 {
 private:
-    uint16_t IN;
+    uint16_t IN1;
+    uint16_t IN2;
 public:
     bool state;
-    Solenoid(uint16_t IN);
-    ~Solenoid();
+    SolenoidOld(uint16_t IN1, uint16_t IN2);
+    ~SolenoidOld();
     void init();
     void on();
     void off();

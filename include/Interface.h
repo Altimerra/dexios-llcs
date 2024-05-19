@@ -5,6 +5,7 @@
 #include <ArduinoJson.h>
 #include "Hand.h"
 
+
 class Interface
 {
 private:
@@ -17,6 +18,9 @@ public:
     ~Interface();
     void init();
     void update();
+    void print(char* key, char* value);
+    void print(char* key, int value);
+    void periodic();
     void clear();
     
 };

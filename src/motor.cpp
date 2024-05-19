@@ -1,19 +1,22 @@
 #include "Motor.h"
 
-Motor::Motor(uint8_t PWM, uint8_t IN1, uint8_t IN2, uint8_t ENC1, uint8_t ENC2) : PWM(PWM), IN1(IN1), IN2(IN2), ENC1(ENC1), ENC2(ENC2), encoder(ENC1, ENC2)
+Motor::Motor(uint8_t PWM, uint8_t IN1, uint8_t IN2, uint8_t ENC1, uint8_t ENC2, uint8_t*stby) : PWM(PWM), IN1(IN1), IN2(IN2), ENC1(ENC1), ENC2(ENC2), encoder(ENC1,ENC2), stby(stby), PID(&encval,&outspeed,&setpoint)
 {
-
-    PID.begin(&encval, &outspeed, &setpoint, p, i, d);
-
+    PID.SetTunings(p, i, d);
+    PID.SetOutputLimits(-255, 255);
+    PID.SetMode(QuickPID::Control::automatic);
+    // TODO check motor driver direction pins with the diagram
+    // TODO tune pid
     // PID.reverse()               // Uncomment if controller output is "reversed"
-    PID.setSampleTime(10); // OPTIONAL - will ensure at least 10ms have past between successful compute() calls
-    PID.setOutputLimits(-255, 255);
+    //PID.setSampleTime(10); // OPTIONAL - will ensure at least 10ms have past between successful compute() calls
+    
     // PID.setBias(0);
-    PID.setWindUpLimits(-10, 10); // Groth bounds for the integral term to prevent integral wind-up
+    //PID.setWindUpLimits(-10, 10); // Groth bounds for the integral term to prevent integral wind-up
 
-    PID.start();
+    //PID.start();
     // PID.reset();               // Used for resetting the I and D terms - only use this if you know what you're doing
     // PID.stop();                // Turn off the PID controller (compute() will not do anything until start() is called)
+    //encoder.begin();
 }
 
 Motor::~Motor()
@@ -48,7 +51,9 @@ void Motor::stp()
 
 void Motor::ss()
 {
-    analogWrite(PWM, abs(speedmul * outspeed));
+    //float speed = (abs(outspeed) < 50) ? 50 : abs(outspeed);
+    float speed =  abs(outspeed);
+    analogWrite(PWM, speed);
 }
 
 void Motor::dir()
@@ -86,23 +91,24 @@ void Motor::update(int speed)
 void Motor::set(int ticks)
 {
     this->setpoint = ticks;
-    running = true;
 }
 
 void Motor::update()
 {
     // Serial.println(newPosition);
-    PID.compute();
+    if (!digitalRead(*stby))
+    {
+        digitalWrite(*stby, HIGH);
+    }
+    PID.Compute();
     dir();
     ss();
     long newPosition = encoder.read();
+    //long newPosition = encoder.getCount();
     if (newPosition != encval)
     {
         encval = newPosition;
     }
-    if (encval > setpoint)
-    {
-        // setpoint = 0;
-        running = false;
-    }
 }
+
+//should work in both pid and non pid modes in case encoder fails
