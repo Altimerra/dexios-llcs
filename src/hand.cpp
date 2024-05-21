@@ -21,6 +21,7 @@ void Hand::init()
     pinMode(*stby1, OUTPUT);
     pinMode(*stby2, OUTPUT);
     pinMode(*stby3, OUTPUT);
+    // TODO add control to this
     digitalWrite(*stby1, LOW);
     digitalWrite(*stby2, LOW);
     digitalWrite(*stby3, LOW);
@@ -29,4 +30,20 @@ void Hand::init()
 void Hand::update()
 {
     mix->update();
+    mmd->update();
+    mrl->update();
+    mtf->update();
+    mto->update();
+    six->update();
+    smd->update();
+}
+
+void Hand::setmode(Mode mode)
+{
+    mix->mode = mode;
+    mmd->mode = mode;
+    mrl->mode = mode;
+    mtf->mode = mode;
+    mto->mode = mode;
+
 }

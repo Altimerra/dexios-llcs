@@ -12,7 +12,9 @@ public:
     void init();
     void on();
     void off();
-    void set(int);
+    void set(bool state);
+    void update();
+    void toggle();
 };
 
 #endif

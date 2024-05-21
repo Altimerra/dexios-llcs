@@ -18,7 +18,7 @@ public:
     ~Interface();
     void init();
     void update();
-    void print(char* key, char* value);
+    template<typename T,typename U> void print(T key, U value);
     void print(char* key, int value);
     void periodic();
     void clear();

@@ -10,7 +10,7 @@ Interface::~Interface()
 
 void Interface::init()
 {
-    Serial.begin(9600);
+    Serial.begin(115200);
     serialout["action"] = "init";
     serializeJson(serialout, Serial);
     Serial.println();
@@ -27,22 +27,19 @@ void Interface::periodic()
     serialout.clear();
 }
 
-void Interface::print(char* key, char* value)
+template<typename T,typename U> void Interface::print(T key, U value)
 {
     serialout[key] = value;
     serializeJson(serialout, Serial);
     Serial.println();
     serialout.clear();
 }
-void Interface::print(char* key, int value)
-{
-    serialout[key] = value;
-    serializeJson(serialout, Serial);
-    Serial.println();
-    serialout.clear();
-}
-//template void Interface::print<char*,char*>(char*,char*);
-//template void Interface::print<char*,int>(char*,int);
+
+template void Interface::print<const char*,char*>(const char*,char*);
+template void Interface::print<const char*,int>(const char*,int);
+template void Interface::print<char*,char*>(char*,char*);
+template void Interface::print<const char*,const char*>(const char*,const char*);
+template void Interface::print<const char*,bool>(const char*,bool);
 
 void Interface::update()
 {

@@ -14,7 +14,7 @@ private:
         {'i','j','k','l'},
         {'m','n','o','p'},
     };
-    enum class Mode {Manual, PID};
+    
     enum class Motors {mix, mmd};
 public:
     Keypad keypad;
@@ -30,7 +30,8 @@ public:
     ~Controller();
     void chkinput();
     void update();
-    void setvalues();
+    void setsetval();
+    void setoutspeed();
     void init();
 };
 

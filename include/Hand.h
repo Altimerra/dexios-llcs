@@ -15,6 +15,7 @@ public:
     ~Hand();
     void init();
     void update();
+    void setmode(Mode mode);
     Motor* mix;
     Motor* mmd;
     Motor* mrl;

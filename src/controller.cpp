@@ -23,6 +23,9 @@ void Controller::init()
 void Controller::chkinput()
 {
     char key = keypad.getKey();
+    if (key) {
+        interface->print("Keypress", &key);
+    }
 
     switch (key) {
         case 'a':
@@ -33,13 +36,49 @@ void Controller::chkinput()
             motor = Motors::mmd;
             interface->print("Controlling Motor","M Middle");
             break;
-        case 'p':
-            mode = Mode::Manual;
-            interface->print("Control Mode","Manual");
+        case 'c':
+            break;
+        case 'd':
+            break;
+        case 'e':
+            break;
+        case 'f':
+            digitalWrite(*(hand->stby1), !digitalRead(*(hand->stby1)));
+            interface->print("Stby1",bool(digitalRead(*(hand->stby1))));
+            break;
+        case 'g':
+            digitalWrite(*(hand->stby2), !digitalRead(*(hand->stby2)));
+            interface->print("Stby2",digitalRead(*(hand->stby1)));
+            break;
+        case 'h':
+            digitalWrite(*(hand->stby3), !digitalRead(*(hand->stby3)));
+            interface->print("Stby3",digitalRead(*(hand->stby1)));
+            break;
+        case 'i':
+            hand->six->toggle();
+            interface->print("S Index", hand->six->state);
+            break;
+        case 'j':
+            hand->smd->toggle();
+            interface->print("S Middle", hand->smd->state);
+            break;
+        case 'k':
+            break;
+        case 'l':
+            break;
+        case 'm':
+            break;
+        case 'n':
             break;
         case 'o':
-            mode = Mode::PID;
+            mode = Mode::PID; // TODO redundant?
+            hand->setmode(Mode::PID);
             interface->print("Control Mode","PID");
+            break;
+        case 'p':
+            mode = Mode::Manual; // TODO redundant?
+            hand->setmode(Mode::Manual);
+            interface->print("Control Mode","Manual");
             break;
         default:
             break;
@@ -49,26 +88,53 @@ void Controller::chkinput()
     yaxis = analogRead(vy);
 }
 
-void Controller::setvalues()
+void Controller::setsetval()
 {
-    
     switch (motor)
     {
     case Motors::mix:
-        hand->mix->set(xaxis*10);
+        hand->mix->set((xaxis-523)*10);
         break;
     case Motors::mmd:
-        hand->mmd->set(xaxis*10);
+        hand->mmd->set((xaxis-523)*10);
         break;
     default:
         break;
     }
 }
 
+void Controller::setoutspeed()
+{
+    switch (motor)
+    {
+    case Motors::mix:
+        hand->mix->setspeed(map(xaxis-523,-512,512,-255,255));
+        break;
+    case Motors::mmd:
+        hand->mmd->setspeed(map(xaxis-523,-512,512,-255,255));
+        break;
+    default:
+        break;
+    }
+}
+
+
+
 void Controller::update()
 {
     chkinput();
-    if (mode == Mode::PID) {
-        setvalues();
+
+    switch (mode)
+    {
+    case Mode::PID:
+        setsetval();
+        break;
+    case Mode::Manual:
+        setoutspeed();
+        break;
+    default:
+        break;
     }
 }
+
+// TODO add solenoid support

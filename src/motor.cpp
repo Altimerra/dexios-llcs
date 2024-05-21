@@ -1,6 +1,9 @@
 #include "Motor.h"
 
-Motor::Motor(uint8_t PWM, uint8_t IN1, uint8_t IN2, uint8_t ENC1, uint8_t ENC2, uint8_t*stby) : PWM(PWM), IN1(IN1), IN2(IN2), ENC1(ENC1), ENC2(ENC2), encoder(ENC1,ENC2), stby(stby), PID(&encval,&outspeed,&setpoint)
+Motor::Motor(uint8_t PWM, uint8_t IN1, uint8_t IN2, uint8_t ENC1, uint8_t ENC2, uint8_t*stby) : 
+PWM(PWM), IN1(IN1), IN2(IN2), ENC1(ENC1), ENC2(ENC2), encoder(ENC1,ENC2), stby(stby), 
+PID(&encval,&outspeed,&setpoint),
+tuner(&encval, &outspeed, tuner.ZN_PID, tuner.directIP, tuner.printALL)
 {
     PID.SetTunings(p, i, d);
     PID.SetOutputLimits(-255, 255);
@@ -17,6 +20,7 @@ Motor::Motor(uint8_t PWM, uint8_t IN1, uint8_t IN2, uint8_t ENC1, uint8_t ENC2, 
     // PID.reset();               // Used for resetting the I and D terms - only use this if you know what you're doing
     // PID.stop();                // Turn off the PID controller (compute() will not do anything until start() is called)
     //encoder.begin();
+    mode = Mode::PID;
 }
 
 Motor::~Motor()
@@ -29,6 +33,10 @@ void Motor::init()
     pinMode(PWM, OUTPUT);
     pinMode(IN1, OUTPUT);
     pinMode(IN2, OUTPUT);
+
+    //tuner.Configure(inputSpan, outputSpan, outputStart, outputStep, testTimeSec, settleTimeSec, samples);
+    //tuner.SetEmergencyStop(tempLimit);
+    outspeed = 0;
 }
 
 void Motor::rcw()
@@ -71,22 +79,6 @@ void Motor::dir()
         stp();
     }
 }
-/*
-void Motor::update(int speed)
-{
-    unsigned long currentTime = millis();
-    if (currentTime - lastUpdateTime >= interval)
-    { // Update every 20 milliseconds
-        lastUpdateTime = currentTime;
-        dir();
-        ss();
-    }
-    if (currentTime - speedSetTime >= duration && speed != 0)
-    {
-        speed = 0;
-    }
-}
-*/
 
 void Motor::set(int ticks)
 {
@@ -95,20 +87,55 @@ void Motor::set(int ticks)
 
 void Motor::update()
 {
-    // Serial.println(newPosition);
+    /* NOTE there is probably a better way to check this
     if (!digitalRead(*stby))
     {
         digitalWrite(*stby, HIGH);
+    }*/
+
+    if (mode == Mode::PID)
+    {
+        PID.Compute();
     }
-    PID.Compute();
+    
     dir();
     ss();
-    long newPosition = encoder.read();
-    //long newPosition = encoder.getCount();
-    if (newPosition != encval)
-    {
-        encval = newPosition;
-    }
+    encval = encoder.read();
 }
 
-//should work in both pid and non pid modes in case encoder fails
+void Motor::setspeed(int speed)
+{
+    this->outspeed = constrain(speed, -255, 255);
+}
+
+// TODO should work in both pid and non pid modes in case encoder fails
+void Motor::tune()
+{
+    float optimumOutput = tuner.softPwm(PWM, encval, outspeed, setpoint, outputSpan, debounce);
+
+    switch (tuner.Run())
+    {
+    case tuner.sample: // active once per sample during test
+        encval = encoder.read();
+        tuner.plotter(encval, outspeed, setpoint, 0.5f, 3); // output scale 0.5, plot every 3rd sample
+        break;
+
+    case tuner.tunings:                      // active just once when sTune is done
+        tuner.GetAutoTunings(&p, &i, &d); // sketch variables updated by sTune
+        PID.SetOutputLimits(0, outputSpan * 0.1);
+        PID.SetSampleTimeUs((outputSpan - 1) * 1000);
+        debounce = 0; // ssr mode
+        outspeed = outputStep;
+        PID.SetMode(QuickPID::Control::automatic); // the PID is turned on
+        PID.SetProportionalMode(QuickPID::pMode::pOnMeas);
+        PID.SetAntiWindupMode(QuickPID::iAwMode::iAwClamp);
+        PID.SetTunings(p, i, d); // update PID with the new tunings
+        break;
+
+    case tuner.runPid: // active once per sample after tunings
+        encval = encoder.read();
+        PID.Compute();
+        tuner.plotter(encval, optimumOutput, setpoint, 0.5f, 3);
+        break;
+    }
+}

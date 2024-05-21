@@ -18,16 +18,24 @@ void Solenoid::init()
 void Solenoid::on()
 {
     digitalWrite(IN, HIGH);
-    state = true;
 }
 
 void Solenoid::off()
 {
     digitalWrite(IN, LOW);
-    state = false;
 }
 
-void Solenoid::set(int state)
+void Solenoid::toggle()
+{
+    state = !state;
+}
+
+void Solenoid::set(bool state)
+{
+    this->state = state;
+}
+
+void Solenoid::update()
 {
     if (state) {
         this->on();
