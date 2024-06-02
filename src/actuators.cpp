@@ -1,14 +1,14 @@
-#include "Hand.h"
+#include "Actuators.h"
 
-Hand::Hand(Motor* mix,  Motor* mmd, Motor* mrl, Motor* mtf, Motor* mto, Solenoid* six, Solenoid* smd, uint8_t* stby1, uint8_t* stby2, uint8_t* stby3) : mix(mix), mmd(mmd), mrl(mrl), mtf(mtf), mto(mto), six(six), smd(smd), stby1(stby1), stby2(stby2), stby3(stby3)
+Actuators::Actuators(Motor* mix,  Motor* mmd, Motor* mrl, Motor* mtf, Motor* mto, Solenoid* six, Solenoid* smd, uint8_t* stby1, uint8_t* stby2, uint8_t* stby3) : mix(mix), mmd(mmd), mrl(mrl), mtf(mtf), mto(mto), six(six), smd(smd), stby1(stby1), stby2(stby2), stby3(stby3)
 {
 }
 
-Hand::~Hand()
+Actuators::~Actuators()
 {
 }
 
-void Hand::init()
+void Actuators::init()
 {
     mix->init();
     mmd->init();
@@ -22,12 +22,12 @@ void Hand::init()
     pinMode(*stby2, OUTPUT);
     pinMode(*stby3, OUTPUT);
     // TODO add control to this
-    digitalWrite(*stby1, LOW);
-    digitalWrite(*stby2, LOW);
-    digitalWrite(*stby3, LOW);
+    digitalWrite(*stby1, HIGH);
+    digitalWrite(*stby2, HIGH);
+    digitalWrite(*stby3, HIGH);
 }
 
-void Hand::update()
+void Actuators::update()
 {
     mix->update();
     mmd->update();
@@ -38,7 +38,7 @@ void Hand::update()
     smd->update();
 }
 
-void Hand::setmode(Mode mode)
+void Actuators::setmode(Modes mode)
 {
     mix->mode = mode;
     mmd->mode = mode;

@@ -3,14 +3,15 @@
 Motor::Motor(uint8_t PWM, uint8_t IN1, uint8_t IN2, uint8_t ENC1, uint8_t ENC2, uint8_t*stby) : 
 PWM(PWM), IN1(IN1), IN2(IN2), ENC1(ENC1), ENC2(ENC2), encoder(ENC1,ENC2), stby(stby), 
 PID(&encval,&outspeed,&setpoint),
-tuner(&encval, &outspeed, tuner.ZN_PID, tuner.directIP, tuner.printALL)
+tuner(&encval, &outspeed, tuner.ZN_PID, tuner.directIP, tuner.printALL),
+mode(Modes::PID)
 {
     PID.SetTunings(p, i, d);
     PID.SetOutputLimits(-255, 255);
     PID.SetMode(QuickPID::Control::automatic);
     // TODO check motor driver direction pins with the diagram
     // TODO tune pid
-    // PID.reverse()               // Uncomment if controller output is "reversed"
+    // PID.reverse()               // Uncomment if Panel output is "reversed"
     //PID.setSampleTime(10); // OPTIONAL - will ensure at least 10ms have past between successful compute() calls
     
     // PID.setBias(0);
@@ -18,9 +19,8 @@ tuner(&encval, &outspeed, tuner.ZN_PID, tuner.directIP, tuner.printALL)
 
     //PID.start();
     // PID.reset();               // Used for resetting the I and D terms - only use this if you know what you're doing
-    // PID.stop();                // Turn off the PID controller (compute() will not do anything until start() is called)
+    // PID.stop();                // Turn off the PID Panel (compute() will not do anything until start() is called)
     //encoder.begin();
-    mode = Mode::PID;
 }
 
 Motor::~Motor()
@@ -82,7 +82,7 @@ void Motor::dir()
 
 void Motor::set(int ticks)
 {
-    this->setpoint = ticks;
+    setpoint = float(ticks);
 }
 
 void Motor::update()
@@ -93,7 +93,7 @@ void Motor::update()
         digitalWrite(*stby, HIGH);
     }*/
 
-    if (mode == Mode::PID)
+    if (mode == Modes::PID)
     {
         PID.Compute();
     }

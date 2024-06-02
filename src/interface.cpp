@@ -1,6 +1,6 @@
 #include "Interface.h"
 
-Interface::Interface(Hand* hand) : hand(hand)
+Interface::Interface(Actuators* actuators) : actuators(actuators)
 {
 }
 
@@ -19,9 +19,23 @@ void Interface::init()
 
 void Interface::periodic()
 {
-    serialout["setpoint"] = hand->mix->setpoint;
-    serialout["encval"] = hand->mix->encval;
-    serialout["outspeed"] = hand->mix->outspeed;
+    serialout["mix"]["setpoint"] = actuators->mix->setpoint;
+    serialout["mix"]["encval"] = actuators->mix->encval;
+    serialout["mix"]["outspeed"] = actuators->mix->outspeed;
+    serialout["mmd"]["setpoint"] = actuators->mmd->setpoint;
+    serialout["mmd"]["encval"] = actuators->mmd->encval;
+    serialout["mmd"]["outspeed"] = actuators->mmd->outspeed;
+    serialout["mrl"]["setpoint"] = actuators->mrl->setpoint;
+    serialout["mrl"]["encval"] = actuators->mrl->encval;
+    serialout["mrl"]["outspeed"] = actuators->mrl->outspeed;
+    serialout["mtf"]["setpoint"] = actuators->mtf->setpoint;
+    serialout["mtf"]["encval"] = actuators->mtf->encval;
+    serialout["mtf"]["outspeed"] = actuators->mtf->outspeed;
+    serialout["mto"]["setpoint"] = actuators->mto->setpoint;
+    serialout["mto"]["encval"] = actuators->mto->encval;
+    serialout["mto"]["outspeed"] = actuators->mto->outspeed;
+    serialout["six"]["state"] = actuators->six->state;
+    serialout["smd"]["state"] = actuators->smd->state;
     serializeJson(serialout, Serial);
     Serial.println();
     serialout.clear();
@@ -30,16 +44,21 @@ void Interface::periodic()
 template<typename T,typename U> void Interface::print(T key, U value)
 {
     serialout[key] = value;
-    serializeJson(serialout, Serial);
-    Serial.println();
-    serialout.clear();
 }
 
 template void Interface::print<const char*,char*>(const char*,char*);
 template void Interface::print<const char*,int>(const char*,int);
+template void Interface::print<const char*,float>(const char*,float);
 template void Interface::print<char*,char*>(char*,char*);
 template void Interface::print<const char*,const char*>(const char*,const char*);
 template void Interface::print<const char*,bool>(const char*,bool);
+
+void Interface::flush()
+{
+    serializeJson(serialout, Serial);
+    Serial.println();
+    serialout.clear();
+}
 
 void Interface::update()
 {
@@ -49,10 +68,10 @@ void Interface::update()
 
     if (Serial.available() > 0)
     {
-        serialout["action"] = "serialavailable";
-        serializeJson(serialout, Serial);
-        Serial.println();
-        serialout.clear();
+        //serialout["action"] = "serialavailable";
+        //serializeJson(serialout, Serial);
+        //Serial.println();
+        //serialout.clear();
         // Read the incoming JSON data
         // String jsonInput = Serial.readStringUntil('\n');
 
@@ -74,47 +93,88 @@ void Interface::update()
         //const char *action = serialin["action"];
 
         // Process the action
+        // TODO simplify this to process single action using switch
         if (strcmp(serialin["action"], "setval") == 0)
         {
-            serialout["action"] = "settingvals";
-            serializeJson(serialout, Serial);
-            Serial.println();
+            //serialout["action"] = "settingvals";
+            //serializeJson(serialout, Serial);
+            //Serial.println();
 
-            if (serialin["data"]["mix"] != nullptr) {
-                hand->mix->set(serialin["data"]["mix"]); 
+            if (strcmp(serialin["actuator"], "mix") == 0) {
+                mtrval = MotorValue(Motors::mix, serialin["val"]);
+            } 
+            else if (strcmp(serialin["actuator"], "mmd") == 0)
+            {
+                mtrval = MotorValue(Motors::mmd, serialin["val"]);
             }
-            if (serialin["data"]["mmd"] != nullptr) {
-                hand->mmd->set(serialin["data"]["mmd"]); 
+            else if (strcmp(serialin["actuator"], "mrl") == 0)
+            {
+                mtrval = MotorValue(Motors::mrl, serialin["val"]);
             }
-            if (serialin["data"]["mrl"] != nullptr) {
-                hand->mrl->set(serialin["data"]["mrl"]); 
+            else if (strcmp(serialin["actuator"], "mtf") == 0)
+            {
+                mtrval = MotorValue(Motors::mtf, serialin["val"]);
             }
-            if (serialin["data"]["mtf"] != nullptr) {
-                hand->mtf->set(serialin["data"]["mtf"]); 
+            else if (strcmp(serialin["actuator"], "mto") == 0)
+            {
+                mtrval = MotorValue(Motors::mto, serialin["val"]);
             }
-            if (serialin["data"]["mto"] != nullptr) {
-                hand->mto->set(serialin["data"]["mto"]); 
+            else if (strcmp(serialin["actuator"], "six") == 0)
+            {
+                slval = SolValue(Solenoids::six, serialin["val"]);
             }
-            if (serialin["data"]["six"] != nullptr) {
-                hand->six->set(serialin["data"]["six"]); 
+            else if (strcmp(serialin["actuator"], "smd") == 0)
+            {
+                slval = SolValue(Solenoids::smd, serialin["val"]);
             }
-            if (serialin["data"]["smd"] != nullptr) {
-                hand->smd->set(serialin["data"]["smd"]); 
+            else 
+            {
+                mtrval = MotorValue(Motors::none, 0);
+                slval = SolValue(Solenoids::none, 0);
             }
         }
+        else if (strcmp(serialin["action"], "modesel") == 0)
+        {
+            if (strcmp(serialin["val"], "pid") == 0) {
+                mode = Modes::PID;
+            } 
+            else if (strcmp(serialin["val"], "manual") == 0)
+            {
+                mode = Modes::Manual;
+            }
+            else
+            {
+                mode = Modes::none;
+            }
+        }
+        else if (strcmp(serialin["action"], "graspsel") == 0)
+        {
+            if (strcmp(serialin["val"], "pinch") == 0) {
+                grasp = Grasps::Pinch;
+            } 
+            else if (strcmp(serialin["val"], "spherical") == 0)
+            {
+                grasp = Grasps::Spherical;
+            }
+            else
+            {
+                grasp = Grasps::none;
+            }
+        }
+        else
+        {
+        }
+    }
+}
 
-        serialout["action"] = "response";
-        serialout["data"]["mix"] = hand->mix->setpoint;
-        serialout["data"]["mmd"] = hand->mmd->setpoint;
-        serialout["data"]["mrl"] = hand->mrl->setpoint;
-        serialout["data"]["mtf"] = hand->mtf->setpoint;
-        serialout["data"]["mto"] = hand->mto->setpoint;
-        serialout["data"]["six"] = hand->six->state;
-        serialout["data"]["smd"] = hand->smd->state;
-
-        serializeJson(serialout, Serial);
+void Interface::sendback()
+{
+    if (Serial.available() > 0)
+    {
+        deserializeJson(serialin, Serial);
+        delay(10);
+        serializeJson(serialin, Serial);
         Serial.println();
-        serialout.clear();
-
+        serialin.clear();
     }
 }

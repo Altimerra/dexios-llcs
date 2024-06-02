@@ -1,140 +1,151 @@
 #include "Controller.h"
 
-Controller::Controller(Hand* hand, Interface* interface, byte rowPins[4], byte colPins[4], uint8_t vx, uint8_t vy): 
-hand(hand), interface(interface),
-keypad( makeKeymap(keys), rowPins, colPins, 4, 4 ), vx(vx), vy(vy)
+Controller::Controller(Actuators* actuators, Interface* interface): actuators(actuators), interface(interface), currentgrasp(Grasps::none), currentmode(Modes::PID)
 {
-    mode = Mode::PID;
-    xaxis = 0;
-    yaxis = 0;
 }
 
 Controller::~Controller()
 {
 }
 
-void Controller::init()
-{
-    //pinMode(A0, INPUT);
-    pinMode(vx, INPUT);
-    pinMode(vy, INPUT);
-}
-
-void Controller::chkinput()
-{
-    char key = keypad.getKey();
-    if (key) {
-        interface->print("Keypress", &key);
-    }
-
-    switch (key) {
-        case 'a':
-            motor = Motors::mix;
-            interface->print("Controlling Motor","M Index");
-            break;
-        case 'b':
-            motor = Motors::mmd;
-            interface->print("Controlling Motor","M Middle");
-            break;
-        case 'c':
-            break;
-        case 'd':
-            break;
-        case 'e':
-            break;
-        case 'f':
-            digitalWrite(*(hand->stby1), !digitalRead(*(hand->stby1)));
-            interface->print("Stby1",bool(digitalRead(*(hand->stby1))));
-            break;
-        case 'g':
-            digitalWrite(*(hand->stby2), !digitalRead(*(hand->stby2)));
-            interface->print("Stby2",digitalRead(*(hand->stby1)));
-            break;
-        case 'h':
-            digitalWrite(*(hand->stby3), !digitalRead(*(hand->stby3)));
-            interface->print("Stby3",digitalRead(*(hand->stby1)));
-            break;
-        case 'i':
-            hand->six->toggle();
-            interface->print("S Index", hand->six->state);
-            break;
-        case 'j':
-            hand->smd->toggle();
-            interface->print("S Middle", hand->smd->state);
-            break;
-        case 'k':
-            break;
-        case 'l':
-            break;
-        case 'm':
-            break;
-        case 'n':
-            break;
-        case 'o':
-            mode = Mode::PID; // TODO redundant?
-            hand->setmode(Mode::PID);
-            interface->print("Control Mode","PID");
-            break;
-        case 'p':
-            mode = Mode::Manual; // TODO redundant?
-            hand->setmode(Mode::Manual);
-            interface->print("Control Mode","Manual");
-            break;
-        default:
-            break;
-    }
-
-    xaxis = analogRead(vx);
-    yaxis = analogRead(vy);
-}
-
-void Controller::setsetval()
-{
-    switch (motor)
-    {
-    case Motors::mix:
-        hand->mix->set((xaxis-523)*10);
-        break;
-    case Motors::mmd:
-        hand->mmd->set((xaxis-523)*10);
-        break;
-    default:
-        break;
-    }
-}
-
-void Controller::setoutspeed()
-{
-    switch (motor)
-    {
-    case Motors::mix:
-        hand->mix->setspeed(map(xaxis-523,-512,512,-255,255));
-        break;
-    case Motors::mmd:
-        hand->mmd->setspeed(map(xaxis-523,-512,512,-255,255));
-        break;
-    default:
-        break;
-    }
-}
-
-
-
 void Controller::update()
 {
-    chkinput();
+    auto mode = interface->mode;
+    auto mtrval = interface->mtrval;
+    auto slval = interface->slval;
+    auto grasp = interface->grasp;
 
-    switch (mode)
+
+    // TODO if mode changes from current mode update all motors
+    if (mode != currentmode)
     {
-    case Mode::PID:
-        setsetval();
+        currentmode = mode;
+        actuators->setmode(currentmode);
+    }
+
+    switch (currentmode)
+    {
+    case Modes::PID:
+        setsetpoint(mtrval);
         break;
-    case Mode::Manual:
-        setoutspeed();
+    case Modes::Manual:
+        setoutspeed(mtrval);
+        break;
+    default:
+        break;
+    }
+
+    setsolval(slval);
+    
+}
+
+void Controller::setgrasp(Grasps grasp, float factor)
+{
+    currentgrasp = grasp;
+    actuators->mix->set( int(trunc(factor*range[0])) );
+    actuators->mmd->set( int(trunc(factor*range[1])) );
+    actuators->mrl->set( int(trunc(factor*range[2])) );
+    actuators->mtf->set( int(trunc(factor*range[3])) );
+    actuators->mto->set( int(trunc(factor*range[4])) );
+}
+
+void Controller::chkgraspprog() // control solenoids while grasping
+{
+    switch (currentgrasp)
+    {
+    case Grasps::Spherical:
+        if (actuators->mix->encval > grasp_spherical[0][0]) {
+            actuators->six->on();  
+        }
+        if (actuators->mix->encval > grasp_spherical[0][1]) {
+            actuators->six->off();
+        }
+        if (actuators->mmd->encval > grasp_spherical[1][0]) {
+            actuators->smd->on();  
+        }
+        if (actuators->mmd->encval > grasp_spherical[1][1]) {
+            actuators->smd->off();
+        }
+        break;
+    case Grasps::Pinch:
+        if (actuators->mix->encval > grasp_precision[0][0]) {
+            actuators->six->on();  
+        }
+        if (actuators->mix->encval > grasp_precision[0][1]) {
+            actuators->six->off();
+        }
+        if (actuators->mmd->encval > grasp_precision[1][0]) {
+            actuators->smd->on();  
+        }
+        if (actuators->mmd->encval > grasp_precision[1][1]) {
+            actuators->smd->off();
+        }
+        break;
         break;
     default:
         break;
     }
 }
 
-// TODO add solenoid support
+void Controller::setsetpoint(MotorValue mtr)
+{
+    switch (mtr.motor)
+    {
+    case Motors::mix:
+        actuators->mix->set(mtr.value);
+        break;
+    case Motors::mmd:
+        actuators->mmd->set(mtr.value);
+        break;
+    case Motors::mrl:
+        actuators->mrl->set(mtr.value);
+        break;
+    case Motors::mtf:
+        actuators->mtf->set(mtr.value);
+        break;
+    case Motors::mto:
+        actuators->mto->set(mtr.value);
+        break;
+    default:
+        break;
+    }
+}
+
+void Controller::setoutspeed(MotorValue mtr)
+{
+    switch (mtr.motor)
+    {
+    case Motors::mix:
+        actuators->mix->setspeed(mtr.value);
+        break;
+    case Motors::mmd:
+        actuators->mmd->setspeed(mtr.value);
+        break;
+    case Motors::mrl:
+        actuators->mrl->setspeed(mtr.value);
+        break;
+    case Motors::mtf:
+        actuators->mtf->setspeed(mtr.value);
+        break;
+    case Motors::mto:
+        actuators->mto->setspeed(mtr.value);
+        break;
+    default:
+        break;
+    }
+}
+
+void Controller::setsolval(SolValue sol)
+{
+    switch (sol.solenoid)
+    {
+    case Solenoids::six:
+        actuators->six->set(sol.value);
+        break;
+    case Solenoids::smd:
+        actuators->smd->set(sol.value);
+        break;
+    default:
+        break;
+    }
+}

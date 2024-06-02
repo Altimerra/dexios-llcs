@@ -1,6 +1,7 @@
 #ifndef SOLENOID_H
 #define SOLENOID_H
 
+#include "Common.h"
 class Solenoid
 {
 private:

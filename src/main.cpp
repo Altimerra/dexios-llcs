@@ -4,12 +4,13 @@
 #include "Motor.h"
 #include "Solenoid.h"
 #include "Interface.h"
+#include "Panel.h"
 #include "Controller.h"
 
 // 2, 3, 18, 19, 20, 21 interrupts
-uint8_t stby1 = 38;
-uint8_t stby2 = 39;
-uint8_t stby3 = 38;
+uint8_t stby1 = 37;
+uint8_t stby2 = 38;
+uint8_t stby3 = 50;
 
 // unsigned long lastExecutedMillis = 0;
 // const unsigned long delayInterval = 1000;
@@ -25,30 +26,36 @@ Solenoid smd(4);
 
 byte rowPins[4] = {A5, A6, A7, A8}; // connect to the row pinouts of the keypad
 byte colPins[4] = {A4, A3, A2, A1}; // connect to the column pinouts of the keypad
-Hand hand(&mix, &mmd, &mrl, &mtf, &mto, &six, &smd, &stby1, &stby2, &stby3);
-Interface interface(&hand);
-Controller controller(&hand, &interface, rowPins, colPins, A9, A10);
+Actuators actuators(&mix, &mmd, &mrl, &mtf, &mto, &six, &smd, &stby1, &stby2, &stby3);
+Interface interface(&actuators);
+Panel panel(&actuators, &interface, rowPins, colPins, A9, A10);
+Controller controller(&actuators, &interface);
 
 void periodic()
 {
     interface.periodic();
-    interface.print("Xaxis", controller.xaxis);
+    //interface.print("setpoint", actuators.mix->setpoint);
+    //interface.print("mode", (int)controller.currentmode); 
+    //interface.flush();
+    //actuators.six->toggle();
+    //actuators.smd->toggle();
 }
 
-Ticker timer(periodic, 1000);
+Ticker timer(periodic, 3000);
 
 void setup()
 {
-    hand.init();
+    actuators.init();
     interface.init();
-    controller.init();
     timer.start();
+    //actuators.mix->set(3000);
 }
 
 void loop()
 {
     interface.update();
     controller.update();
-    hand.update();
+    actuators.update();
     timer.update();
+    //interface.sendback();
 }

@@ -1,42 +1,32 @@
-#ifndef CONTROLLER_H
-#define CONTROLLER_H
-#include <Arduino.h>
-#include <Keypad.h>
+#ifndef CONTROL_H
+#define CONTROL_H
+
+#include "Common.h"
+#include "Actuators.h"
 #include "Interface.h"
-#include "Hand.h"
 
 class Controller
 {
 private:
-    char keys[4][4] = {
-        {'a','b','c','d'},
-        {'e','f','g','h'},
-        {'i','j','k','l'},
-        {'m','n','o','p'},
-    };
-    
-    enum class Motors {mix, mmd};
+    // determines the points at which the solenoid is turned on and off 
+    const int grasp_precision[2][2] = {{1000,2000},{300,4000}};
+    const int grasp_spherical[2][2] = {{1000,2000},{3000,4000}};
+    // first layer: which solenoid, second layer: on and off time
+    const int range[5] = {12000, 12000, 10000, 3000, 10000};
 public:
-    Keypad keypad;
-    uint8_t vx;
-    uint8_t vy;
-    int xaxis;
-    int yaxis;
-    Mode mode; //current mode
-    Motors motor; //current motor
-    Hand* hand;
+    Actuators* actuators;
     Interface* interface;
-    Controller(Hand* hand, Interface* interface, byte rowPins[4], byte colPins[4], uint8_t vx, uint8_t vy);
+    Grasps currentgrasp;
+    Modes currentmode;
+    Controller(Actuators* actuators, Interface* interface);
     ~Controller();
-    void chkinput();
     void update();
-    void setsetval();
-    void setoutspeed();
-    void init();
+    void setgrasp(Grasps grasp, float factor);
+    void chkgraspprog();
+    void setsetpoint(MotorValue mtr);
+    void setoutspeed(MotorValue mtr);
+    void setsolval(SolValue sol);
 };
 
 
-
-//TODO add Manual and PID based control selector
-//TODO add tuning controls
 #endif

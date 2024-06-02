@@ -1,9 +1,9 @@
 #ifndef INTER_H
 #define INTER_H
 
-#include <Arduino.h>
+#include "Common.h"
 #include <ArduinoJson.h>
-#include "Hand.h"
+#include "Actuators.h"
 
 
 class Interface
@@ -13,8 +13,12 @@ private:
 public:
     JsonDocument serialin;
     JsonDocument serialout;
-    Hand* hand;
-    Interface(Hand*);
+    Actuators* actuators;
+    MotorValue mtrval;
+    SolValue slval;
+    Grasps grasp;
+    Modes mode;
+    Interface(Actuators*);
     ~Interface();
     void init();
     void update();
@@ -22,7 +26,8 @@ public:
     void print(char* key, int value);
     void periodic();
     void clear();
-    
+    void flush();
+    void sendback();
 };
 
 #endif

@@ -1,11 +1,11 @@
 #ifndef MOTOR_H
 #define MOTOR_H
-#include <Arduino.h>
+
+#include "Common.h"
 #include <Encoder.h>
 #include <QuickPID.h>
 #include <sTune.h>
 
-enum class Mode {Manual, PID};
 
 class Motor
 {
@@ -43,7 +43,7 @@ public:
     Encoder encoder;
     QuickPID PID;
     sTune tuner;
-    Mode mode;
+    Modes mode;
 
     Motor(uint8_t PWM, uint8_t IN1, uint8_t IN2, uint8_t ENC1, uint8_t ENC2, uint8_t *stby);
     ~Motor();

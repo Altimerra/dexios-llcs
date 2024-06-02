@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include "Solenoid.h"
 
 Solenoid::Solenoid(uint16_t IN) : IN(IN)
