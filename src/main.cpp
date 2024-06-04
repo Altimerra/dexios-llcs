@@ -17,8 +17,8 @@ uint8_t stby3 = 50;
 
 Motor mix(8, 39, 41, 3, 26, &stby1);
 Motor mmd(12, 33, 35, 19, 28, &stby1);
-Motor mtf(10, 36, 34, 20, 30, &stby2);
-Motor mto(44, 42, 40, 21, 22, &stby2);
+Motor mtf(10, 36, 34, 21, 30, &stby2);
+Motor mto(44, 42, 40, 20, 22, &stby2);
 Motor mrl(46, 48, 47, 18, 24, &stby3);
 
 Solenoid six(6);

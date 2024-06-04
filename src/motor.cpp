@@ -68,11 +68,11 @@ void Motor::dir()
 {
     if (outspeed > 0)
     {
-        racw();
+        rcw();
     }
     else if (outspeed < 0)
     {
-        rcw();
+        racw();
     }
     else
     {
