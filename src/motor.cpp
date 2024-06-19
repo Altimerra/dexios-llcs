@@ -4,7 +4,7 @@ Motor::Motor(uint8_t PWM, uint8_t IN1, uint8_t IN2, uint8_t ENC1, uint8_t ENC2, 
 PWM(PWM), IN1(IN1), IN2(IN2), ENC1(ENC1), ENC2(ENC2), encoder(ENC1,ENC2), stby(stby), 
 PID(&encval,&outspeed,&setpoint),
 tuner(&encval, &outspeed, tuner.ZN_PID, tuner.directIP, tuner.printALL),
-mode(Modes::PID)
+mode(Modes::PID), diffTimer()
 {
     PID.SetTunings(p, i, d);
     PID.SetOutputLimits(-255, 255);
@@ -37,6 +37,7 @@ void Motor::init()
     //tuner.Configure(inputSpan, outputSpan, outputStart, outputStep, testTimeSec, settleTimeSec, samples);
     //tuner.SetEmergencyStop(tempLimit);
     outspeed = 0;
+    diffTimer.begin(100);
 }
 
 void Motor::rcw()
@@ -101,11 +102,33 @@ void Motor::update()
     dir();
     ss();
     encval = encoder.read();
+    detectobj2();
 }
 
 void Motor::setspeed(int speed)
 {
     this->outspeed = constrain(speed, -255, 255);
+}
+
+void Motor::detectobj1()
+{
+    if (diffTimer.fire())
+    {
+        float diff = abs(encval - encprev);
+        if (diff < 500.0)
+        {
+            setpoint = encval;
+        }
+        encprev = encval;
+    }
+}
+
+void Motor::detectobj2()
+{
+    if (PID.GetDterm() < 1)
+    {
+        setpoint = encval;
+    }
 }
 
 // TODO should work in both pid and non pid modes in case encoder fails

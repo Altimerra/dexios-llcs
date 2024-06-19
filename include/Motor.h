@@ -5,6 +5,7 @@
 #include <Encoder.h>
 #include <QuickPID.h>
 #include <sTune.h>
+#include <FireTimer.h>
 
 
 class Motor
@@ -30,7 +31,7 @@ public:
     uint8_t *stby;
 
     // const int interval = 20;
-    double speedmul = 1.0; // 0 - 1 value speed multiplier
+    //float speedmul = 1.0; // 0 - 1 value speed multiplier
     // unsigned long lastUpdateTime;
     // unsigned long speedSetTime;
 
@@ -44,6 +45,7 @@ public:
     QuickPID PID;
     sTune tuner;
     Modes mode;
+    FireTimer diffTimer;
 
     Motor(uint8_t PWM, uint8_t IN1, uint8_t IN2, uint8_t ENC1, uint8_t ENC2, uint8_t *stby);
     ~Motor();
@@ -51,6 +53,7 @@ public:
 
     bool running = false;
     float encval;   // current encoder reading
+    float encprev;
     float outspeed; // PID output to PWM pin
     float setpoint = 0;
     float p = 0.15;
@@ -61,6 +64,8 @@ public:
     void setspeed(int speed); // For manual control
     void update();
     void tune();
+    void detectobj1();
+    void detectobj2();
 };
 
 #endif
