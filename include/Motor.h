@@ -56,8 +56,8 @@ public:
     float encprev;
     float outspeed; // PID output to PWM pin
     float setpoint = 0;
-    float p = 0.15;
-    float i = 0.1;
+    float p = 0.06;
+    float i = 0.03;
     float d = 0;
 
     void set(int ticks); // For pid control

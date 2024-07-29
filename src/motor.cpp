@@ -102,7 +102,7 @@ void Motor::update()
     dir();
     ss();
     encval = encoder.read();
-    detectobj2();
+    //detectobj2();
 }
 
 void Motor::setspeed(int speed)
